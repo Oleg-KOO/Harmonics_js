@@ -333,9 +333,7 @@ class HarmonicGraph{
 	
 	Refresh(){
 		for (let item of this.listHarmonic) item.Refresh();
-		let points = this.GetPointList();
-		if (points == '') return;
-		this.harmonic.setAttribute('points', points);
+		this.harmonic.setAttribute('points', this.GetPointList());
 		this.RefreshHarmonicDisplay();
 		this.toRefresh(this);
 	}
