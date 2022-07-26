@@ -308,7 +308,7 @@ class HarmonicGraph{
 	
 	RemoveHarmonicDisplay(number){
 		if (!this.harmonicsDisplay.has(number)) return;
-		this.harmonicsDisplay.get(number).parentElement.removeChild(this.harmonicsDisplay.get(number));
+		this.harmonicsDisplay.get(number).remove();
 		this.harmonicsDisplay.delete(number);
 	}
 	
