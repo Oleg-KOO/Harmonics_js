@@ -1,0 +1,72 @@
+h1{
+	font-size: 100%;
+	color: black;
+	text-align: center;
+}
+	
+.box {
+	max-width: 800px;
+	border: 1px solid silver;
+	user-select: none;
+	display: block;
+	position: absolute;
+	left: 100px;
+	top: 50px;
+}
+
+.content {
+	width: auto%;
+	margin: 7px;
+	border: 1px solid silver;
+	user-select: true;
+	padding: 10px;
+		
+}
+		
+.button_content{
+	display: inline-block;
+	vertical-align: top;
+	border: 1px solid blue;
+	width: auto;
+	padding: 10px;
+	margin: 0px;
+}
+p{
+	margin: 0px;
+	padding: 0px;
+	margin-bottom: 10px;
+}
+	
+button{
+	width: 55px;
+	margin: 10px 0px 0px 0px;
+	height: 30px;
+	font-size: 100%;
+	font-weight: bolder;
+}
+	
+.but{
+	display: inline-block;
+}
+	
+.harmonic_text{
+	border: 1px solid red;
+	font-size: 150%;
+	font-weight: bolder;
+	text-align: center;
+	margin-top: 10px;
+}
+	
+.funk{
+	width: 220px;
+	height: 100%;
+}
+	
+.funk2{
+	width: 350px;
+	height: 100%;
+}
+
+.funk2 div{
+	display: block;
+}

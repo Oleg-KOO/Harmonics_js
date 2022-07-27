@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Harmonics</title>
+
+		<link rel="stylesheet" type="text/css" href="Harmonics.css">
+		<script src="Harmonics_set.js"></script>
+		<script src="Harmonics_func.js"></script>
+		<script src="Harmonics_class.js"></script>
+
+	</head>
+	<body>
+		<div class = 'box'>
+			<h1>Разложение кусочной функции на гармонические составляющие</h1>
+			<div class = "svgBox" id="harmonic_svgBox"></div>
+			<div class = "content">
+				<div class= "button_content">
+					<p>Кол-во гармоник:</p>
+					<div class = "harmonic_text" ><span id="harmonic_count">3</span></div>
+					<div class = "but"><button id="harmonic_down" >-</button></div>
+					<div class = "but"><button id="harmonic_up" >+</button></div>
+				</div>
+				<div class= "button_content funk">
+					<p>Исходная функция:</br></p>
+					<p id="lineFunk"></p>
+				</div>
+				<div class= "button_content funk2" id = "lineHarmonics">
+					<p>Гармоники: </br></p>
+				</div>
+				
+			</div>
+		</div>
+		<script src="Harmonics_main.js"></script>
+	</body>
+</html>
