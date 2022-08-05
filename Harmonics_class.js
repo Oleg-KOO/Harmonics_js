@@ -3,19 +3,7 @@ class FieldData{
 	constructor(svgWidth, gridData){
 		
 		for (let item in gridData) this[item] = gridData[item]
-		/*
-			maxY: 2.5,
-			minY: -2.5,
-			period: 4,
-			countPeriod: 1,
-			majorDivisions: 0.5,
-			auxiliaryDivisions: 0.1,
-			binding: 0.05,
-			countPoint: 30,
-			linearFuncMapping: true,
-			startPoints:
-		*/
-		
+
 		this.maxX = this.period / 2 + this.period * this.countPeriod;
 		this.minX = - this.period / 2;
 		this.width = this.maxX - this.minX;
