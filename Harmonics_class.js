@@ -456,6 +456,7 @@ class ResizeBox{
 		box.onpointerdown = this.ChoiceOfAction.bind(this);
 		box.onpointerout = this.Reset.bind(this);
 		box.onpointerup = this.Reset.bind(this);
+		this.process = '';
 	}
 		
 	handleEvent(event){
@@ -481,7 +482,8 @@ class ResizeBox{
 			this.box.style.cursor = '';
 			this.box.onpointermove = null;
 			this.box.ondragstart = null;
-			if (this.CheckTargetParent()) this.ResetFixedPosition(this.box);
+			if (this.process == 'move' && this.CheckTargetParent()) this.ResetFixedPosition(this.box);
+			this.process = '';
 	}
 	
 	CheckBorder(event, box){
