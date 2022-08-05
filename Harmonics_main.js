@@ -108,9 +108,3 @@ boxFunk[0].addEventListener('pointermove', new ResizeBox(boxFunk[0], true, true,
 boxFunk[1].addEventListener('pointermove', new ResizeBox(boxFunk[1], true, true, false));
 boxFunk2.addEventListener('pointermove', new ResizeBox(boxFunk2, true, true, false));
 boxFunk3.addEventListener('pointermove', new ResizeBox(boxFunk3, true, true, false));
-
-function RemoveCheckBox(number){
-		if (!this.checkBoxList.has(number)) return;
-		this.checkBoxList.get(number).parentElement.removeChild(this.checkBoxList.get(number));
-		this.checkBoxList.delete(number);
-}
