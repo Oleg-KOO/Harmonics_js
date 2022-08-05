@@ -457,6 +457,9 @@ class ResizeBox{
 		box.onpointerout = this.Reset.bind(this);
 		box.onpointerup = this.Reset.bind(this);
 		this.process = '';
+		let propList = ['position', 'margin', 'width', 'height', 'left', 'top', 'boxShadow'];
+		this.properties = {};
+		propList.forEach(item => this.properties[item] = box.style[item]);
 	}
 		
 	handleEvent(event){
@@ -525,9 +528,8 @@ class ResizeBox{
 	}
 	
 	ResetFixedPosition(box){
-		let properties = ['position', 'margin', 'width', 'height', 'left', 'top'];
-		properties.forEach(item => box.style[item] = '');
-		box.parentElement.style.boxShadow = '';
+		this.box.parentElement.style.boxShadow = '';
+		for (let item in this.properties) box.style[item] = this.properties[item];
 	}
 		
 	Move(event){
