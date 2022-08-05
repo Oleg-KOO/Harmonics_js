@@ -17,10 +17,9 @@ h1{
 	text-shadow: 2px 2px 5px DimGrey;
 	user-select: none;
 }
-
 	
 .box {
-	width: 30%;
+	width: 40%;
 	display: block;
 	border-radius: 10px;
 	background-color: white;

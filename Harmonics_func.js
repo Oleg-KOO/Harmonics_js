@@ -25,7 +25,8 @@ function CreatescaleLine (command, startPoint, stopPoint, step){
 	for (let i =  step; i <= stopPoint;  i+= step) command(i);
 }
 
-function CreateGridLine(field, gridData, scale, majorDivisionsFormat, auxiliaryDivisionsFormat){
+function CreateGridLine(field, fieldData, majorDivisionsFormat, auxiliaryDivisionsFormat){
+	let scale = fieldData.Scale;
 	let gridLine = field.AddSVG({
 		'tag': 'g', 
 		'class': 
@@ -42,55 +43,60 @@ function CreateGridLine(field, gridData, scale, majorDivisionsFormat, auxiliaryD
 		
 	majorLine.SetAttr(majorDivisionsFormat);
 	auxiliaryLine.SetAttr(auxiliaryDivisionsFormat);
+	let maxX = scale.X(fieldData.maxX);
+	let minX = scale.X(fieldData.minX);
+	let maxY = scale.Y(fieldData.maxY);
+	let minY = scale.Y(fieldData.minY);
 	
 	CreatescaleLine(function(i){
 		let x = scale.X(i);
 		auxiliaryLine.AddSVG({
 			'tag': 'line', 
 			'x1': x, 
-			'y1': scale.Y(gridData.minY), 
+			'y1': minY, 
 			'x2': x, 
-			'y2': scale.Y(gridData.maxY)});
-		}, gridData.minX, gridData.maxX, gridData.auxiliaryDivisions);
+			'y2': maxY
+			});
+		}, fieldData.minX, fieldData.maxX, fieldData.auxiliaryDivisions);
 	
 	CreatescaleLine(function(i){
 		let y = scale.Y(i);
 		auxiliaryLine.AddSVG({
 			'tag': 'line', 
-			'x1': scale.X(gridData.minX), 
+			'x1': minX, 
 			'y1': y, 
-			'x2': scale.X(gridData.maxX), 
+			'x2': maxX, 
 			'y2': y
 			});
-		}, gridData.minY, gridData.maxY, gridData.auxiliaryDivisions);
+		}, fieldData.minY, fieldData.maxY, fieldData.auxiliaryDivisions);
 	
 	CreatescaleLine(function(i){
 		let x = scale.X(i);
 		majorLine.AddSVG({
 			'tag': 'line', 
 			'x1': x, 
-			'y1': scale.Y(gridData.minY), 
+			'y1': minY, 
 			'x2': x, 
-			'y2': scale.Y(gridData.maxY)
+			'y2': maxY
 			});
-		}, gridData.minX, gridData.maxX, gridData.majorDivisions);
+		}, fieldData.minX, fieldData.maxX, fieldData.majorDivisions);
 	
 	CreatescaleLine(function(i){
 		let y = scale.Y(i);
 		majorLine.AddSVG({
 			'tag': 'line', 
-			'x1': scale.X(gridData.minX), 
+			'x1': minX, 
 			'y1': y, 
-			'x2': scale.X(gridData.maxX), 
+			'x2': maxX, 
 			'y2': y
 			});
-		}, gridData.minY, gridData.maxY, gridData.majorDivisions);
+		}, fieldData.minY, fieldData.maxY, fieldData.majorDivisions);
 	
 }
 
-function CreateAxisLine(field, gridData, scale, axisFormat, textFormat){
+function CreateAxisLine(field, fieldData, axisFormat, textFormat){
+	let scale = fieldData.Scale;
 	let axis = field.AddSVG({'tag': 'g', 'class': 'axis'});
-
 	let axisLine = axis.AddSVG({
 		'tag': 'g', 
 		'class': 'axisLine'
@@ -119,17 +125,17 @@ function CreateAxisLine(field, gridData, scale, axisFormat, textFormat){
 		});
 	axisLine.AddSVG({
 		'tag': 'line', 
-		'x1': scale.X(gridData.minX), 
+		'x1': scale.X(fieldData.minX), 
 		'y1': 0, 
-		'x2': scale.X(gridData.maxX), 
+		'x2': scale.X(fieldData.maxX), 
 		'y2': 0
 		});
 	axisLine.AddSVG({
 		'tag': 'line', 
 		'x1': 0, 
-		'y1': scale.Y(gridData.minY), 
+		'y1': scale.Y(fieldData.minY), 
 		'x2': 0, 
-		'y2': scale.Y(gridData.maxY)
+		'y2': scale.Y(fieldData.maxY)
 		});
 	let axisDivizion = axis.AddSVG({
 		'tag': 'g', 
@@ -161,7 +167,7 @@ function CreateAxisLine(field, gridData, scale, axisFormat, textFormat){
 			'text': i, 
 			'transform': 'translate(' + (x - 10) + ', 25)'
 			});
-		}, gridData.minX, gridData.maxX, gridData.majorDivisions);
+		}, fieldData.minX, fieldData.maxX, fieldData.majorDivisions);
 		
 	CreatescaleLine(function(i){
 		let y = scale.Y(i);
@@ -177,7 +183,7 @@ function CreateAxisLine(field, gridData, scale, axisFormat, textFormat){
 			'text': i, 
 			'transform': 'translate(-40, ' + (y + 5) + ')'
 			});
-		}, gridData.minY, gridData.maxY, gridData.majorDivisions);
+		}, fieldData.minY, fieldData.maxY, fieldData.majorDivisions);
 }	
 
 function GetShadowFilter(name, startX, startY, dx, dy, dev, color = false){

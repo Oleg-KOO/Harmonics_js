@@ -1,25 +1,46 @@
 
 class FieldData{
-	constructor(width, gridData){
-		this.width = width;
-		this.gridData = gridData;
-		this.scale = (this.width - 20) / gridData.width;
-		this.height = this.scale * gridData.height + 15;
-		this.zeroX = Math.abs(this.scale * gridData.minX) + 10 ;
-		this.zeroY = this.height - Math.abs(this.scale * gridData.minY) - 5;
+	constructor(svgWidth, gridData){
+		
+		for (let item in gridData) this[item] = gridData[item]
+		/*
+			maxY: 2.5,
+			minY: -2.5,
+			period: 4,
+			countPeriod: 1,
+			majorDivisions: 0.5,
+			auxiliaryDivisions: 0.1,
+			binding: 0.05,
+			countPoint: 30,
+			linearFuncMapping: true,
+			startPoints:
+		*/
+		
+		this.maxX = this.period / 2 + this.period * this.countPeriod;
+		this.minX = - this.period / 2;
+		this.width = this.maxX - this.minX;
+		this.height = this.maxY - this.minY;
+		
+		this.svgWidth = svgWidth;
+		this.scale = (this.svgWidth - 20) / this.width;
+		this.svgHeight = this.scale * this.height + 15;
+		
+		this.zeroX = Math.abs(this.scale * this.minX) + 10 ;
+		this.zeroY = this.svgHeight - Math.abs(this.scale * this.minY) - 5;
+		this.Scale = new Scale(this.scale);
 	}
 	
 	CheckX(x, last = false){
-		x = Math.round(Math.trunc(x/this.scale/gridData.binding) * gridData.binding * 10000)/10000; 
-		if (x < gridData.minX) return gridData.minX;
-		if (x > -gridData.minX || last) return -gridData.minX;
+		x = Math.round(Math.trunc(x/this.scale/this.binding) * this.binding * 10000)/10000; 
+		if (x < this.minX) return this.minX;
+		if (x > -this.minX || last) return -this.minX;
 		return x;
 	}
 	
 	CheckY(y){
-		y = Math.round(Math.trunc(-y/this.scale/gridData.binding) * gridData.binding * 10000)/10000;
-		if (y < gridData.minY) return gridData.minY;
-		if (y > gridData.maxY) return gridData.maxY;
+		y = Math.round(Math.trunc(-y/this.scale/this.binding) * this.binding * 10000)/10000;
+		if (y < this.minY) return this.minY;
+		if (y > this.maxY) return this.maxY;
 		return y;
 	}
 }
@@ -35,17 +56,22 @@ class Scale{
 }
 
 class PointList{
-	constructor(field, fieldData, svgBox, startPoints){
+	constructor(field, fieldData, svgBox){
 		this.field = field;
 		this.fieldData = fieldData;
 		this.svgBox = svgBox;
-		this.listPoint = this.GetPoint(startPoints);
+		this.listPoint = this.GetPoint(fieldData.startPoints);
 	}
 	
 	GetPoint(startPoints){
 		let points = []
 		for (let i = 0; i < startPoints.length; i++){
-			points[i] = new Point(this.field, this.fieldData, this.svgBox, startPoints[i][0], startPoints[i][1]);
+			let x = startPoints[i][0]; let y = startPoints[i][1];
+			x = x > -this.fieldData.minX ? -this.fieldData.minX : x;
+			x = x < this.fieldData.minX ? this.fieldData.minX : x;
+			y = y > this.fieldData.maxY ? this.fieldData.maxY : y;
+			y = y < this.fieldData.minY ? this.fieldData.minY : y;
+			points[i] = new Point(this.field, this.fieldData, this.svgBox, x, y);
 		}
 		points[startPoints.length - 1].last = true;
 		return points;
@@ -96,7 +122,7 @@ class Point{
 		},
 		pointerdown: function(event){
 				this.marker.style.cursor = 'grabbing'
-				this.HandlerToMovePoint(event, this);
+				this.MovePoint(event, this);
 		},
 	}
 	
@@ -117,19 +143,18 @@ class Point{
 		this.text.setAttribute('transform', `translate(${x1 + 5}, ${y1 - 20})`);
 	}
 	
-	HandlerToMovePoint(args){
-
+	MovePoint(args){
 		let target = args.target;
 		target.setPointerCapture(event.pointerId);
 		let clientRect = this.svgBox.getBoundingClientRect();
-		let dx = args.offsetX * fieldData.width / clientRect.width - fieldData.zeroX - args.currentTarget.attributes.cx.value;
-		let dy = args.offsetY * fieldData.width / clientRect.width - fieldData.zeroY - args.currentTarget.attributes.cy.value;
+		let dx = args.offsetX * this.fieldData.svgWidth / clientRect.width - this.fieldData.zeroX - args.currentTarget.attributes.cx.value;
+		let dy = args.offsetY * this.fieldData.svgWidth / clientRect.width - this.fieldData.zeroY - args.currentTarget.attributes.cy.value;
 		
 		function SetNewCoordinate(args){
-			let x = args.offsetX * fieldData.width / clientRect.width - dx - fieldData.zeroX;
-			let y = args.offsetY * fieldData.width / clientRect.width - dy - fieldData.zeroY;
-			x = fieldData.CheckX(x, this.last);
-			y = fieldData.CheckY(y);
+			let x = args.offsetX * this.fieldData.svgWidth / clientRect.width - dx - this.fieldData.zeroX;
+			let y = args.offsetY * this.fieldData.svgWidth / clientRect.width - dy - this.fieldData.zeroY;
+			x = this.fieldData.CheckX(x, this.last);
+			y = this.fieldData.CheckY(y);
 			this.Refresh(x, y);
 			this.box.dispatchEvent(new CustomEvent("movePoint", {detail:{ 'x': x, 'y': y,}}));
 		}
@@ -267,9 +292,9 @@ class LineFunc{
 }
 
 class LineGraph{
-	constructor(field, points, gridData, scale){
+	constructor(field, points, fieldData){
 		this.allLine = [];
-		let countPeriod = gridData.linearFuncMapping ? gridData.countPeriod : 0;
+		let countPeriod = fieldData.linearFuncMapping ? fieldData.countPeriod : 0;
 		for (let j = 0; j <= countPeriod; j++){
 			let point1 = points[points.length - 1];
 			this.allLine[j] = [];			
@@ -277,16 +302,16 @@ class LineGraph{
 			{
 				let x1 = point1.x; let y1 = point1.y;
 				if  (i == 0) x1 = -x1;
-				x1 = x1 + gridData.period * j;
-				let x2 = points[i].x + gridData.period * j; let y2 = points[i].y 
+				x1 = x1 + fieldData.period * j;
+				let x2 = points[i].x + fieldData.period * j; let y2 = points[i].y 
 				let item = field.AddSVG({
 					'tag': 'line', 
-					'x1': scale.X(x1), 
-					'y1': scale.Y(y1), 
-					'x2': scale.X(x2), 
-					'y2': scale.Y(y2),
+					'x1': fieldData.Scale.X(x1), 
+					'y1': fieldData.Scale.Y(y1), 
+					'x2': fieldData.Scale.X(x2), 
+					'y2': fieldData.Scale.Y(y2),
 					});
-				this.allLine[j][i] = new LineFunc(point1, points[i], scale, item, i, gridData.period * j);
+				this.allLine[j][i] = new LineFunc(point1, points[i], fieldData.Scale, item, i, fieldData.period * j);
 				point1 = points[i];
 			}
 		}
@@ -341,10 +366,10 @@ class Harmonic{
 
 class HarmonicGraph{
 	
-	constructor(mainField, harmonicsField, lineGraph, gridData, scale, initialHarmonicsCount){
+	constructor(mainField, harmonicsField, lineGraph, fieldData, initialHarmonicsCount){
 		this.lineGraph = lineGraph;
 		this.listHarmonic = [];
-		this.gridData = gridData;
+		this.fieldData = fieldData;
 		this.scale = scale;
 		this.harmonicsField = harmonicsField;
 		this.harmonicsDisplay = new Map();
@@ -361,22 +386,22 @@ class HarmonicGraph{
 	
 	GetPointList(){
 		let points = ''; 
-		let step = (this.gridData.maxX - this.gridData.minX) / (this.gridData.countPoint * (this.gridData.countPeriod + 1) * this.listHarmonic.length);
-		for (let x = this.gridData.minX; x <= this.gridData.maxX; x += step){
+		let step = (this.fieldData.maxX - this.fieldData.minX) / (this.fieldData.countPoint * (this.fieldData.countPeriod + 1) * this.listHarmonic.length);
+		for (let x = this.fieldData.minX; x <= this.fieldData.maxX; x += step){
 			let y = 0;
 			for (let item of this.listHarmonic) y += item.y(x);
-			points += this.scale.X(x) + ',' + this.scale.Y(y) + ' ';
+			points += this.fieldData.Scale.X(x) + ',' + this.fieldData.Scale.Y(y) + ' ';
 		}
 		return points;
 	}
 	
 	GetHarmonic(number){
-		let step = (this.gridData.maxX - this.gridData.minX) / (this.gridData.countPoint * (this.gridData.countPeriod + 1) * this.listHarmonic.length);
+		let step = (this.fieldData.maxX - this.fieldData.minX) / (this.fieldData.countPoint * (this.fieldData.countPeriod + 1) * this.listHarmonic.length);
 		let points = '';
 		let item;
 		for (let newItem of this.listHarmonic) if (newItem.number == number) {item = newItem; break;}
-		for (let x = this.gridData.minX; x <= this.gridData.maxX; x += step){
-			points += this.scale.X(x) + ',' + this.scale.Y(item.y(x)) + ' ';
+		for (let x = this.fieldData.minX; x <= this.fieldData.maxX; x += step){
+			points += this.fieldData.Scale.X(x) + ',' + this.fieldData.Scale.Y(item.y(x)) + ' ';
 		}
 		return points;
 	}
@@ -406,7 +431,7 @@ class HarmonicGraph{
 	}
 	
 	AddHarmonic(){
-		this.listHarmonic[this.listHarmonic.length] = new Harmonic(this.lineGraph, this.gridData.countPoint, this.gridData.period, this.listHarmonic.length);
+		this.listHarmonic[this.listHarmonic.length] = new Harmonic(this.lineGraph, this.fieldData.countPoint, this.fieldData.period, this.listHarmonic.length);
 		this.Refresh();
 	}
 	

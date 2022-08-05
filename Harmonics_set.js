@@ -1,20 +1,14 @@
-class GridData{
-	maxY = 2.5;
-	minY = -2.5;
-	period = 4;
-	countPeriod = 1;
-	majorDivisions = 0.5;
-	auxiliaryDivisions = 0.1;
-	binding = 0.05;
-	countPoint = 30;
-	linearFuncMapping = true;
-	startPoints = [[-1.5, -2], [-1.1, 2], [-0.5, 2], [1.5, -2], [this.period / 2, -2]];
-	constructor(){
-		this.maxX = this.period / 2 + this.period * this.countPeriod;
-		this.minX = - this.period / 2;
-		this.width = this.maxX - this.minX;
-		this.height = this.maxY - this.minY;
-	}
+let gridData = {
+	'maxY': 2.5,
+	'minY': -2.5,
+	'period': 4,
+	'countPeriod': 1,
+	'majorDivisions': 0.5,
+	'auxiliaryDivisions': 0.1,
+	'binding': 0.05,
+	'countPoint': 30,
+	'linearFuncMapping': true,
+	'startPoints': [[-1.5, -2], [-1.1, 2], [-0.5, 2], [1.5, -2], [2, -2]],
 }
 
 let axisFormat = {
