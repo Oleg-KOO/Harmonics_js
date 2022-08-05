@@ -87,7 +87,7 @@ buttonDown.onclick = function(){
 	harmonicCount.innerHTML = harmonicGraph.listHarmonic.length == 0 ? '-': harmonicGraph.listHarmonic.length - 1;
 };
 window.addEventListener("keydown", function(e) {
-    if (e.key == "ArrowUp") buttonUp.click();
+    	if (e.key == "ArrowUp") buttonUp.click();
 	if (e.key == "ArrowDown") buttonDown.click();
 });
 
