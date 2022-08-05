@@ -62,7 +62,7 @@ class Point{
 			'tag': 'circle', 
 			'r': 3, 
 			'fill': 'black'});
-		this.selection = this.box.AddSVG({
+		this.marker = this.box.AddSVG({
 			'tag': 'circle', 
 			'r': 25, 
 			'fill': 'silver', 
@@ -74,7 +74,7 @@ class Point{
 			'tag': 'text', 
 			'fill': 'black', 
 			'stroke-width': 0.2, 
-			'visibility': "hidden",
+			'visibility': 'hidden'
 			});
 		this.last = last;
 		this.fieldData = fieldData;
@@ -85,30 +85,24 @@ class Point{
 	
 	Handlers = {
 		pointerenter:	function(){
-				this.selection.SetAttr({
-					'fill': 'black', 
-					'cursor' : 'grab'
-					});
-				this.text.setAttribute('visibility', "visible");
+				this.marker.style.fill = 'black'
+				this.marker.style.cursor = 'grab'
+				this.text.style.visibility = 'visible';
 		},
 		pointerleave: function(){
-				this.selection.SetAttr({
-					'fill': 'silver', 
-					'cursor' : ''
-					});
-				this.text.setAttribute('visibility', "hidden");
+				this.marker.style.fill = 'silver'
+				this.marker.style.cursor = ''
+				this.text.style.visibility = 'hidden';
 		},
 		pointerdown: function(event){
-				this.selection.SetAttr({
-					'cursor' : 'grabbing'
-					});
+				this.marker.style.cursor = 'grabbing'
 				this.HandlerToMovePoint(event, this);
 		},
 	}
 	
 	SetHandlers(handlers){
 		for (let handler in handlers){
-			this.selection.addEventListener(handler, handlers[handler].bind(this));
+			this.marker.addEventListener(handler, handlers[handler].bind(this));
 		}
 	}
 	
@@ -117,8 +111,8 @@ class Point{
 		let x1 = this.x * fieldData.scale; let y1 = -this.y * fieldData.scale;
 		this.point.setAttribute('cx', x1);
 		this.point.setAttribute('cy', y1);
-		this.selection.setAttribute('cx', x1);
-		this.selection.setAttribute('cy', y1);
+		this.marker.setAttribute('cx', x1);
+		this.marker.setAttribute('cy', y1);
 		this.text.innerHTML = `x= ${x} y=${y}`;
 		this.text.setAttribute('transform', `translate(${x1 + 5}, ${y1 - 20})`);
 	}
@@ -142,7 +136,7 @@ class Point{
 		
 		function ResetMove(args){
 			target.onpointermove = null;
-			target.SetAttr({'cursor': 'grab'});
+			target.style.cursor = 'grab';
 			this.box.dispatchEvent(new CustomEvent("finishMove"));
 		}
 		target.onpointermove = SetNewCoordinate.bind(this);
