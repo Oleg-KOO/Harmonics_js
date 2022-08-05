@@ -26,12 +26,6 @@ let field = divBox.AddSVG({
 let defs = field.AddSVG({
 	'tag': "defs"
 	});
-	
-defs.appendChild(GetShadowFilter('shadowPoints', scale.X(gridData.minX), scale.Y(gridData.maxY), 5, 5, 5));
-defs.appendChild(GetShadowFilter('shadowHarmonics', scale.X(gridData.minX), scale.Y(gridData.maxY), 3, 3, 4));
-defs.appendChild(GetShadowFilter('shadowLineGraf', scale.X(gridData.minX), scale.Y(gridData.maxY), 5, 5, 5));
-defs.appendChild(GetShadowFilter('shadowHarmonicGraf', scale.X(gridData.minX), scale.Y(gridData.maxY), 7, 7, 7));	
-	
 let grid = field.AddSVG({
 	'tag': 'g', 
 	'class': 'gridLine'
@@ -56,40 +50,42 @@ let pointsField = field.AddSVG({
 	'class': 'points',
 	});
 	
-let points = new PointList(pointsField, fieldData, divBox, gridData.startPoints);
-let lineGraph = new LineGraph (lineFunc, points.listPoint, gridData, scale);
-let buttonUp = document.getElementById('harmonic_up');
-let buttonDown = document.getElementById('harmonic_down');
-let harmonicCount = document.getElementById('harmonic_count');
-let lineFunkText = document.getElementById('lineFunk');
-let harmonicsText = document.getElementById('lineHarmonics');
+defs.appendChild(GetShadowFilter('shadowPoints', scale.X(gridData.minX), scale.Y(gridData.maxY), 5, 5, 5));
+defs.appendChild(GetShadowFilter('shadowHarmonics', scale.X(gridData.minX), scale.Y(gridData.maxY), 3, 3, 4));
+defs.appendChild(GetShadowFilter('shadowLineGraf', scale.X(gridData.minX), scale.Y(gridData.maxY), 5, 5, 5));
+defs.appendChild(GetShadowFilter('shadowHarmonicGraf', scale.X(gridData.minX), scale.Y(gridData.maxY), 7, 7, 7));	
 
 harmonics.SetAttr(harmonicsFormat);
 lineFunc.SetAttr(lineFuncFormat);
 harmonicFunc.SetAttr(harmonicFuncFormat);
 CreateGridLine(grid, gridData, scale, majorDivisionsFormat, auxiliaryDivisionsFormat);
-CreateAxisLine(grid, gridData, scale, axisFormat, textFormat);
-let iformBlock = new InformationBlock(lineFunkText, harmonicsText, Number(harmonicCount.innerHTML));
- 
-let harmonicGraph = new HarmonicGraph(harmonicFunc, harmonics, lineGraph, gridData, scale, Number(harmonicCount.innerHTML));
-harmonicGraph.harmonic.addEventListener("refresh", function(){iformBlock.ToRefresh(harmonicGraph)});
-harmonicGraph.Refresh();
+CreateAxisLine(grid, gridData, scale, axisFormat, textFormat);	
 
+let buttonUp = document.getElementById('harmonic_up');
+let buttonDown = document.getElementById('harmonic_down');
+let harmonicCount = document.getElementById('harmonic_count');
+let lineFunkText = document.getElementById('lineFunk');
+let harmonicsText = document.getElementById('lineHarmonics');
+let points = new PointList(pointsField, fieldData, divBox, gridData.startPoints);
+let lineGraph = new LineGraph (lineFunc, points.listPoint, gridData, scale);
+let iformBlock = new InformationBlock(lineFunkText, harmonicsText, Number(harmonicCount.innerHTML));
+let harmonicGraph = new HarmonicGraph(harmonicFunc, harmonics, lineGraph, gridData, scale, Number(harmonicCount.innerHTML));
+
+harmonicGraph.harmonic.addEventListener("refresh", function(){iformBlock.ToRefresh(harmonicGraph)});
 iformBlock.harmonicsText.addEventListener("markerRemoved", function(event){harmonicGraph.AddHarmonicDisplay(event.detail.number)});
 iformBlock.harmonicsText.addEventListener("markerRaised", function(event){harmonicGraph.RemoveHarmonicDisplay(event.detail.number)});
+harmonicGraph.Refresh();
 
 buttonUp.onclick = function(){
 	iformBlock.AddCheckBox(harmonicGraph.listHarmonic.length);
 	harmonicGraph.AddHarmonic();
 	harmonicCount.innerHTML = harmonicGraph.listHarmonic.length == 0 ? '-': harmonicGraph.listHarmonic.length - 1;
 };
-
 buttonDown.onclick = function(){
 	harmonicGraph.RemoveHarmonic();
 	iformBlock.RemoveCheckBox(harmonicGraph.listHarmonic.length);
 	harmonicCount.innerHTML = harmonicGraph.listHarmonic.length == 0 ? '-': harmonicGraph.listHarmonic.length - 1;
 };
-
 window.addEventListener("keydown", function(e) {
     if (e.key == "ArrowUp") buttonUp.click();
 	if (e.key == "ArrowDown") buttonDown.click();
@@ -100,7 +96,6 @@ let mainBox = document.getElementsByClassName('box')[0];
 let boxFunk = document.getElementsByClassName('funk');
 let boxFunk2 = document.getElementsByClassName('button_content')[0];
 let boxFunk3 = document.getElementsByClassName('content')[0];
-
 
 mainBox.addEventListener('pointermove', new ResizeBox(mainBox));
 svgBox.addEventListener('pointermove', new ResizeBox(svgBox));
