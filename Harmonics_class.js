@@ -34,8 +34,26 @@ class Scale{
 	reY(val) {return -val / this.scale;}
 }
 
+class PointList{
+	constructor(field, fieldData, svgBox, startPoints){
+		this.field = field;
+		this.fieldData = fieldData;
+		this.svgBox = svgBox;
+		this.listPoint = this.GetPoint(startPoints);
+	}
+	
+	GetPoint(startPoints){
+		let points = []
+		for (let i = 0; i < startPoints.length; i++){
+			points[i] = new Point(this.field, this.fieldData, this.svgBox, startPoints[i][0], startPoints[i][1]);
+		}
+		points[startPoints.length - 1].last = true;
+		return points;
+	}
+}
+
 class Point{
-	constructor(field, x, y, scale, last = false){
+	constructor(field, fieldData, svgBox, x, y, last = false){
 		this.box = field.AddSVG({
 			'tag': 'g', 
 			'id': "point"
@@ -49,18 +67,43 @@ class Point{
 			'r': 25, 
 			'fill': 'silver', 
 			'opacity': 0.25, 
-			'stroke': 'none'
+			'stroke': 'none',
+			'filter': "url(#shadowPoints)"
 			});
 		this.text = this.box.AddSVG({
 			'tag': 'text', 
 			'fill': 'black', 
 			'stroke-width': 0.2, 
-			'visibility': "hidden"
+			'visibility': "hidden",
 			});
 		this.last = last;
-		this.scale = scale;
-		this.dependentElements = [];
+		this.fieldData = fieldData;
+		this.svgBox = svgBox;
+		this.SetHandlers(this.Handlers);
 		this.Refresh(x, y);
+	}
+	
+	Handlers = {
+		pointerenter:	function(){
+				this.selection.SetAttr({
+					'fill': 'black', 
+					'cursor' : 'grab'
+					});
+				this.text.setAttribute('visibility', "visible");
+		},
+		pointerleave: function(){
+				this.selection.SetAttr({
+					'fill': 'silver', 
+					'cursor' : ''
+					});
+				this.text.setAttribute('visibility', "hidden");
+		},
+		pointerdown: function(event){
+				this.selection.SetAttr({
+					'cursor' : 'grabbing'
+					});
+				this.HandlerToMovePoint(event, this);
+		},
 	}
 	
 	SetHandlers(handlers){
@@ -71,18 +114,39 @@ class Point{
 	
 	Refresh(x, y){
 		this.x = x; this.y = y;
-		let x1 = scale.X(this.x); let y1 = scale.Y(this.y)
+		let x1 = this.x * fieldData.scale; let y1 = -this.y * fieldData.scale;
 		this.point.setAttribute('cx', x1);
 		this.point.setAttribute('cy', y1);
 		this.selection.setAttribute('cx', x1);
 		this.selection.setAttribute('cy', y1);
 		this.text.innerHTML = `x= ${x} y=${y}`;
 		this.text.setAttribute('transform', `translate(${x1 + 5}, ${y1 - 20})`);
-		for (let elem of this.dependentElements) elem(x, y);
 	}
 	
-	SetRefresh(refresh){
-		this.dependentElements[this.dependentElements.length] = refresh;
+	HandlerToMovePoint(args){
+
+		let target = args.target;
+		target.setPointerCapture(event.pointerId);
+		let clientRect = this.svgBox.getBoundingClientRect();
+		let dx = args.offsetX * fieldData.width / clientRect.width - fieldData.zeroX - args.currentTarget.attributes.cx.value;
+		let dy = args.offsetY * fieldData.width / clientRect.width - fieldData.zeroY - args.currentTarget.attributes.cy.value;
+		
+		function SetNewCoordinate(args){
+			let x = args.offsetX * fieldData.width / clientRect.width - dx - fieldData.zeroX;
+			let y = args.offsetY * fieldData.width / clientRect.width - dy - fieldData.zeroY;
+			x = fieldData.CheckX(x, this.last);
+			y = fieldData.CheckY(y);
+			this.Refresh(x, y);
+			this.box.dispatchEvent(new CustomEvent("movePoint", {detail:{ 'x': x, 'y': y,}}));
+		}
+		
+		function ResetMove(args){
+			target.onpointermove = null;
+			target.SetAttr({'cursor': 'grab'});
+			this.box.dispatchEvent(new CustomEvent("finishMove"));
+		}
+		target.onpointermove = SetNewCoordinate.bind(this);
+		target.onpointerup = ResetMove.bind(this);
 	}
 }
 
@@ -97,8 +161,8 @@ class LineFunc{
 		this.ratioList = new Map();
 		this.text = '';
 		this.SetParam();
-		point1.SetRefresh(this.Refresh1.bind(this));
-		point2.SetRefresh(this.Refresh2.bind(this));
+		point1.box.addEventListener('movePoint', this.Refresh1.bind(this));
+		point2.box.addEventListener('movePoint', this.Refresh2.bind(this));
 	}
 	y(x) { return this.a * x + this.b;}
 	check(x) {return x => this.minX && x <= this.maxX;}
@@ -120,13 +184,15 @@ class LineFunc{
 		else this.text = `[${this.minX}< x <${this.maxX}]: y= ${(this.a == 0 ? '': this.a) + (this.a == 0 ? '': '·x') + (this.b == 0 ? '': this.b < 0 ? '': this.a == 0 ? '': ' + ') + (this.b == 0 ? '': this.b)}`;
 	}
  
-	Refresh1(x, y){
+	Refresh1(event){
+		let x = event.detail.x; let y = event.detail.y;
 		if (this.numberPoint == 0) x = -x;
 		this.htmlItem.SetAttr({'x1': this.scale.X(x + this.shift), 'y1': this.scale.Y(y)});
 		this.SetParam();
 	}
 	
-	Refresh2(x, y){
+	Refresh2(event){
+		let x = event.detail.x; let y = event.detail.y;
 		this.htmlItem.SetAttr({'x2': this.scale.X(x + this.shift), 'y2': this.scale.Y(y)});
 		this.SetParam();
 	}
@@ -230,6 +296,7 @@ class LineGraph{
 				point1 = points[i];
 			}
 		}
+		this.pointList = points;
 		this.lineList = this.allLine[0];
 	}
 		
@@ -280,19 +347,22 @@ class Harmonic{
 
 class HarmonicGraph{
 	
-	constructor(mainField, harmonicsField, lineGraph, gridData, scale, initialHarmonicsCount, toRefresh){
+	constructor(mainField, harmonicsField, lineGraph, gridData, scale, initialHarmonicsCount){
 		this.lineGraph = lineGraph;
 		this.listHarmonic = [];
 		this.gridData = gridData;
 		this.scale = scale;
 		this.harmonicsField = harmonicsField;
-		this.toRefresh = toRefresh;
 		this.harmonicsDisplay = new Map();
 
 		this.harmonic = mainField.AddSVG({
-				'tag': 'polyline', 
+				'tag': 'polyline',
 				});
 		for (let i = 0; i <= initialHarmonicsCount; i++) this.AddHarmonic();
+		for (let point of lineGraph.pointList){
+			point.box.addEventListener('movePoint', this.RedrawCurrent.bind(this));
+			point.box.addEventListener('finishMove', this.RedrawEnd.bind(this));
+		}
 	}
 	
 	GetPointList(){
@@ -357,15 +427,14 @@ class HarmonicGraph{
 		for (let item of this.listHarmonic) item.Refresh();
 		this.harmonic.setAttribute('points', this.GetPointList());
 		this.RefreshHarmonicDisplay();
-		this.toRefresh(this);
+		this.harmonic.dispatchEvent(new CustomEvent("refresh"));
 	}
 	
-	RedrawCurrent(currentPointBox, x, y){
-		currentPointBox.Refresh(x, y);
+	RedrawCurrent(){
 		if (this.listHarmonic.length <= 5) this.Refresh();
 	}
 	
-	RedrawEnd(currentPointBox){
+	RedrawEnd(){
 		if (this.listHarmonic.length > 5) this.Refresh();
 	}
 	
@@ -378,3 +447,212 @@ class HarmonicGraph{
 	
 }
 
+class ResizeBox{
+	constructor(box, move = true, resize = true, proportional = true){
+		this.box = box;
+		this.move = move;
+		this.resize = resize;
+		this.proportional = proportional;
+		box.onpointerdown = this.ChoiceOfAction.bind(this);
+		box.onpointerout = this.Reset.bind(this);
+		box.onpointerup = this.Reset.bind(this);
+	}
+		
+	handleEvent(event){
+		if (event.target != this.box) 
+			return;
+		this.CheckBorder(event, this.box);
+	}
+	
+	ChoiceOfAction(event){
+		if (this.box != event.target) 
+			return;
+		let check = this.CheckBorder(event, this.box);
+		if (check == 'm' && this.move){
+			this.Move(event); this.process = 'move';
+		}
+		else if (check != '' && this.resize){
+			this.Resize(event, check); this.process = 'resize'
+		}
+		else this.Reset(event);
+	}
+	
+	Reset(){
+			this.box.style.cursor = '';
+			this.box.onpointermove = null;
+			this.box.ondragstart = null;
+			if (this.CheckTargetParent()) this.ResetFixedPosition(this.box);
+	}
+	
+	CheckBorder(event, box){
+		let re = 15;
+		let bottom = box.clientHeight - event.offsetY < re;
+		let right = box.clientWidth - event.offsetX < re;
+		let top = event.offsetY < re;
+		let left = event.offsetX < re;
+		
+		if (bottom && left || top && right) { box.style.cursor = 'nesw-resize'; return bottom && left ? 'bl' : 'tr'; }
+		if (bottom && right || top && left) { box.style.cursor = 'nwse-resize'; return top && left ? 'tl' : 'br';}
+		if (right || left || bottom || top) { box.style.cursor = 'move'; return 'm';}
+		box.style.cursor = ''; 
+		
+		return '';
+	}
+	
+	SetFixedPosition(box){
+		
+		let clientRect = box.getBoundingClientRect();
+	
+		let newX = clientRect.x;
+		let newY = clientRect.y;
+	
+		let w = clientRect.width;
+		let h = clientRect.height;
+		
+		box.style.position = 'fixed';
+		box.style.margin = '0px';
+		box.style.width = w + 'px';
+		box.style.width = (w + w - box.offsetWidth) + 'px';
+		if (!this.proportional){
+			box.style.height = h + 'px';
+			box.style.height = (h + h - box.offsetHeight) + 'px';
+		}
+
+		box.style.left = newX + 'px';
+		box.style.top = newY + 'px';	
+	}
+	
+	ResetFixedPosition(box){
+		let properties = ['position', 'margin', 'width', 'height', 'left', 'top'];
+		properties.forEach(item => box.style[item] = '');
+		box.parentElement.style.boxShadow = '';
+	}
+		
+	Move(event){
+	
+		let box = this.box;
+		box.ondragstart = function(){ return false;};
+		box.setPointerCapture(event.pointerId);
+		if (box.style.position != 'fixed') this.SetFixedPosition(box);
+		let dx = event.clientX - Number(box.style.left.replace('px', ''));
+		let dy = event.clientY - Number(box.style.top.replace('px', ''));
+		
+		box.onpointermove = function(event){
+			let box = event.target;
+			box.style.left = (event.clientX - dx) + 'px';
+			box.style.top = (event.clientY - dy) + 'px';
+			if (this.CheckTargetParent()) box.parentElement.style.boxShadow = '0 0 15px 2px green';
+			else box.parentElement.style.boxShadow = '';
+		}.bind(this);
+	};
+	
+	CheckTargetParent(){
+		let v = this.box.style.visibility;
+		this.box.style.visibility = 'hidden';
+		let elemBelow = document.elementFromPoint(event.clientX, event.clientY);
+		this.box.style.visibility = v;
+		return (this.box.parentElement != null && this.box.parentElement == elemBelow)
+	}
+	
+	Resize(event, check){
+		
+		let box = event.target;
+		box.ondragstart = function(){ return false;};
+		box.setPointerCapture(event.pointerId);
+		if (box.style.position != 'fixed') this.SetFixedPosition(box);
+		let dx = event.pageX - Number(box.style.left.replace('px', ''));
+		dx = event.offsetX > box.offsetWidth / 2 ? dx - Number(box.style.width.replace('px', '')) : dx;
+		
+		let dy = event.pageY - Number(box.style.top.replace('px', ''));
+		dy = event.offsetY > box.offsetHeight / 2 ? dy - Number(box.style.height.replace('px', '')) : dy ;
+
+		let changeFunc = function(event1){this.ChangeSize(event1, check, {X: dx, Y: dy})};
+		box.onpointermove = changeFunc.bind(this);
+	}
+	
+	ChangeSize(event, check, start){
+		let box = event.target;
+		let l = Number(box.style.left.replace('px', ''));
+		let t = Number(box.style.top.replace('px', ''));
+		let w = Number(box.style.width.replace('px', ''));
+		let h = Number(box.style.height.replace('px', ''));
+		
+		let startHeight = box.offsetHeight;
+		let dWidth = event.clientX - start.X - l;
+		
+		switch (check) {
+			case 'br':
+				box.style.width = (event.clientX - start.X - l) + 'px';
+				if (!this.proportional) box.style.height = (event.clientY - start.Y - t) + 'px';
+				break;
+			case 'bl':
+				box.style.width = (w - dWidth) + 'px';
+				box.style.left = (l + dWidth)  +'px';
+				if (!this.proportional) box.style.height = (event.clientY - start.Y - t) + 'px';
+				break;
+			case 'tr':
+				box.style.width = (event.clientX - start.X - l) + 'px';
+				if (!this.proportional) box.style.height = (h - event.clientY + start.Y + t) + 'px';
+				box.style.top = (t + startHeight - box.offsetHeight) + 'px';
+				break;
+			case 'tl':
+				box.style.width = (w - dWidth) + 'px';
+				box.style.left = (l + dWidth) +'px';
+				if (!this.proportional) box.style.height = (h - event.clientY + start.Y + t) + 'px';
+				box.style.top = (t + startHeight - box.offsetHeight) + 'px';
+				break;
+		}
+	}
+}
+
+class InformationBlock{
+	constructor(lineFuncText, harmonicsText, startCount){
+		this.checkBoxList = new Map();
+		this.lineFuncText = lineFuncText;
+		this.harmonicsText = harmonicsText
+		for (let i = 0; i <= startCount; i++) 
+			this.AddCheckBox(i);
+	}
+	
+	ToRefresh(graf){
+		let text1 = '';
+		for (let item of graf.lineGraph.lineList)   
+			text1 += item.toString() + '<br/>';
+		this.lineFuncText.innerHTML = text1;
+		
+		for (let i = 0; i < graf.listHarmonic.length; i++){
+			if (!this.checkBoxList.has(i)) continue;
+			this.checkBoxList.get(i).childNodes[1].innerHTML = graf.listHarmonic[i].toString();
+		}			
+	}
+ 
+	AddCheckBox(number){
+		let box = this.harmonicsText.appendChild(document.createElement('div'));
+		let checkbox = box.appendChild(document.createElement('input'));
+		checkbox.SetAttr({
+			'type': "checkbox", 
+			'name': 'harmonic#' + number
+		});
+		 
+		let label = box.appendChild(document.createElement('label'));
+		label.SetAttr({
+			'for': 'harmonic#' + number
+		});
+		label.innerHTML = 'harmonic#' + number;
+		this.checkBoxList.set(number, box);
+		let checkBoxFunc = function(){this.CheckHandler(number)};
+		checkbox.onclick = checkBoxFunc.bind(this);
+	}
+
+	RemoveCheckBox(number){
+		if (!this.checkBoxList.has(number)) return;
+		this.checkBoxList.get(number).parentElement.removeChild(this.checkBoxList.get(number));
+		this.checkBoxList.delete(number);
+	}
+	 
+	CheckHandler(number){
+		let checkBox = this.checkBoxList.get(number).childNodes[0];
+		if(checkBox.checked == true) this.harmonicsText.dispatchEvent(new CustomEvent("markerRemoved", {detail:{ 'number': number}}));
+		else this.harmonicsText.dispatchEvent(new CustomEvent("markerRaised", {detail:{ 'number': number}}));
+	}
+}

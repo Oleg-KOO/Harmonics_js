@@ -12,24 +12,29 @@
 
 	</head>
 	<body>
+		<p> </p>
 		<div class = 'box'>
-			<h1>Разложение кусочной функции на гармонические составляющие</h1>
-			<div class = "svgBox" id="harmonic_svgBox"></div>
-			<div class = "content">
-				<div class= "button_content">
-					<p>Кол-во гармоник:</p>
-					<div class = "harmonic_text" ><span id="harmonic_count">3</span></div>
-					<div class = "but"><button id="harmonic_down" >-</button></div>
-					<div class = "but"><button id="harmonic_up" >+</button></div>
-				</div>
-				<div class= "button_content funk">
-					<p>Исходная функция:</br></p>
-					<p id="lineFunk"></p>
-				</div>
-				<div class= "button_content funk2" id = "lineHarmonics">
-					<p>Гармоники: </br></p>
-				</div>
-				
+				<h1 id='title'>Разложение кусочной функции на гармонические составляющие</h1>
+				<div class = "svgBox" id="harmonic_svgBox"></div>
+				<div class = "content">
+					<div class= "button_content">
+						<p>Кол-во гармоник:</p>
+						<div class = "harmonic_text" ><span id="harmonic_count">3</span></div>
+						<button id="harmonic_down" >-</button>
+						<button id="harmonic_up" >+</button>
+					</div>
+					<div class= "funk">
+						<p>Исходная функция:</br></p>
+						<div class= "funk_insaid">
+						<p id="lineFunk"></p>
+						</div>
+					</div>
+					<div class= "funk">
+						<p>Гармоники:</br></p>
+						<div class= "funk_insaid" id = "lineHarmonics">
+						</div>
+					</div>
+					
 			</div>
 		</div>
 		<script src="Harmonics_main.js"></script>

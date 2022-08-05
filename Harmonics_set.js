@@ -34,6 +34,7 @@ let textFormat = {
 let lineFuncFormat = {
 	'stroke': "blue", 
 	'stroke-width': "3",
+	'opacity': 0.8,
 }
 
 let harmonicFuncFormat = {
@@ -43,6 +44,7 @@ let harmonicFuncFormat = {
 
 let harmonicsFormat = {
 	'stroke-width': "1",
+	'opacity': 0.6,
 }
 
 let majorDivisionsFormat = {

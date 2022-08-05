@@ -5,10 +5,14 @@ function SetAttr(attr){
 }
 	
 function AddSVG(attr){
-	let newSvg = this.appendChild(document.createElementNS('http://www.w3.org/2000/svg', attr.tag));
+	let newSvg = this.appendChild(CreateSVG(attr.tag));
 	if (attr.tag == 'text') { newSvg.innerHTML = attr.text; delete attr.text; }
 	delete attr.tag; newSvg.SetAttr(attr);
 	return newSvg;
+}
+
+function CreateSVG(tag){
+	return document.createElementNS('http://www.w3.org/2000/svg', tag);
 }
 	
 function CreatescaleLine (command, startPoint, stopPoint, step){
@@ -175,16 +179,167 @@ function CreateAxisLine(field, gridData, scale, axisFormat, textFormat){
 		}, gridData.minY, gridData.maxY, gridData.majorDivisions);
 }	
 
-function GetPointArray(field, startPoints, scale, pointHandlers){
-	let points = []
-	for (let i = 0; i < startPoints.length; i++){
-		if (i == startPoints.length - 1){
-			points[i] = new Point(field, startPoints[i][0], startPoints[i][1], scale, true);
-			points[i].SetHandlers(pointHandlers);
-			break;
-		}
-		points[i] = new Point(field, startPoints[i][0], startPoints[i][1], scale);
-		points[i].SetHandlers(pointHandlers);
-	}
-	return points;
+function GetShadowFilter(name, startX, startY, dx, dy, dev, color = false){
+let defs = CreateSVG('defs');
+let filter = defs.AddSVG({
+	'tag': 'filter',
+	'id': name,
+	'filterUnits': 'userSpaceOnUse',
+	'x': startX,
+	'y': startY,
+	
+	'width': "100%", 
+	'height': "100%"
+	});
+	filter.AddSVG({
+	'tag': 'feOffset',
+	'result': 'offOut',
+	'in': color ? 'SourceGraphic' : 'SourceAlpha',
+	'dx': dx, 
+	'dy': dy 
+	});
+	filter.AddSVG({
+	'tag': 'feGaussianBlur',
+	'result': 'blurOut',
+	'in': 'offOut',
+	'stdDeviation': dev, 
+	});
+	filter.AddSVG({
+	'tag': 'feBlend',
+	'in': 'SourceGraphic',
+	'in2': 'blurOut',
+	'mode': 'normal', 
+	});
+	return filter;
 }
+
+/*
+function ResizeBox1(event, box){
+
+	if (event.target != box) 
+		return;
+	
+	box.onpointerdown = function(event){pointermoveFunc(event, box)};
+	box.onpointerout = ResetMove1;
+	box.onpointerup = ResetMove1;
+	CheckBorder(event, box);
+	
+	function SetAbsolutePosition(box){
+		let newX = Number(box.style.left.replace('px', '')) + box.offsetLeft;
+		let newY = Number(box.style.top.replace('px', '')) + box.offsetTop;
+		let w = box.offsetWidth;
+		let item = box;
+		while (item.offsetParent != null){
+			newX += item.offsetParent.offsetLeft;
+			newY += item.offsetParent.offsetTop;
+			item = item.offsetParent;
+		}
+		box.style.position = 'fixed';
+		box.style.width = w + 'px';
+		box.style.left = newX + 'px';
+		box.style.top = newY + 'px';
+	}
+		
+	function MoveBox(event){
+	
+		let box = event.target;
+		box.setPointerCapture(event.pointerId);
+		if (box.style.position != 'fixed') SetAbsolutePosition(box);
+		let dx = event.clientX - Number(box.style.left.replace('px', ''));
+		let dy = event.clientY - Number(box.style.top.replace('px', ''));
+		
+		box.onpointermove = function(event){
+			box.style.left = (event.clientX - dx) + 'px';
+			box.style.top = (event.clientY - dy) + 'px';
+		}
+		box.onpointerup = function(){ResetMove1(box)};
+	};
+	
+	function ResetMove1(event){
+			let box = event.target;
+			box.style.cursor = '';
+			box.onpointermove = null;
+	}
+	
+	function CheckBorder(event, box){
+		if (box != event.target) return;
+		let re = 15;
+		let bottom = box.clientHeight - event.offsetY < re;
+		let right = box.clientWidth - event.offsetX < re;
+		let top = event.offsetY < re;
+		let left = event.offsetX < re;
+		
+		let val = '';
+		
+		if (bottom && left || top && right) { box.style.cursor = 'nesw-resize'; val = bottom && left ? 'bl' : 'tr';}
+		else if (bottom && right || top && left) { box.style.cursor = 'nwse-resize'; val = top && left ? 'tl' : 'br';}
+		else if (right || left || bottom || top) { box.style.cursor = 'move'; val = 'm';}
+		else box.style.cursor = '';
+		
+		return val;
+	}
+	
+	function pointermoveFunc (event, box){
+		if (box != event.target) return;
+		let check = CheckBorder(event, box);
+		if (check == 'm'){
+			MoveBox(event); 
+		}
+		else if (check != ''){
+			box.setPointerCapture(event.pointerId); ChangeBox(event, check);
+		}
+		else ResetMove1(event);
+	}
+
+	function ChangeBox(event, check){
+		
+		let box = event.target;
+		box.setPointerCapture(event.pointerId);
+		if (box.style.position != 'fixed') SetAbsolutePosition(box);
+		let dx = event.pageX - Number(box.style.left.replace('px', ''));
+		dx = event.offsetX > box.offsetWidth / 2 ? dx - Number(box.style.width.replace('px', '')) : dx;
+		
+		let dy = event.pageY - Number(box.style.top.replace('px', ''));
+		let h = Number(box.style.height.replace('px', '')); let dy2 = h == 0 ? box.offsetHeight : h;
+		dy = event.offsetY > box.offsetHeight / 2 ? dy - dy2 : dy ;
+
+		let changeFunc = function(event1){ChangeSize(event1, check, {X: dx, Y: dy})};
+		box.onpointermove = changeFunc;
+	}
+	
+	function ChangeSize(event, check, start){
+		let box = event.target;
+		let l = Number(box.style.left.replace('px', ''));
+		let t = Number(box.style.top.replace('px', ''));
+		let w = Number(box.style.width.replace('px', ''));
+		let h = Number(box.style.height.replace('px', ''));
+		
+		let sartHeight = box.offsetHeight;
+		let dWidth = event.clientX - start.X - l;
+		
+		switch (check) {
+			case 'br':
+				box.style.width = (event.clientX - start.X - l) + 'px';
+				//box.style.height = (event.clientY - start.Y - t) + 'px';
+				break;
+			case 'bl':
+				box.style.width = (w - dWidth) + 'px';
+				box.style.left = (l + dWidth)  +'px';
+				break;
+			case 'tr':
+				box.style.width = (event.clientX - start.X - l) + 'px';
+				box.style.top = (t + sartHeight - box.offsetHeight) + 'px';
+				break;
+			case 'tl':
+				box.style.width = (w - dWidth) + 'px';
+				box.style.left = (l + dWidth) +'px';
+				box.style.top = (t + sartHeight - box.offsetHeight) + 'px';
+				break;
+		}
+	}
+} */
+
+
+
+
+
