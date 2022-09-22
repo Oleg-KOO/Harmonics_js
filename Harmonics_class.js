@@ -313,7 +313,7 @@ class LineGraph{
 			let ratios = line.GetRatios(countPoint, period, harmonic);
 			ka += ratios.ka;  kb += ratios.kb;
 		}
-		
+		ka = ka / period * 2; kb = kb / period * 2;
 		ka = Math.round(ka * 100000) / 100000;
 		kb = Math.round(kb * 100000) / 100000;
 		
@@ -331,9 +331,9 @@ class Harmonic{
 	}
 	
 	y(x){
-		if (this.number == 0) return this.ka / this.period;
-		return this.ka * Math.cos(Math.PI * this.number * x / this.period * 2)/ this.period * 2 +
-			   this.kb * Math.sin(Math.PI * this.number * x / this.period * 2)/ this.period * 2;
+		if (this.number == 0) return this.ka / 2;
+		return  this.ka * Math.cos(Math.PI * this.number * x / this.period * 2) +
+			this.kb * Math.sin(Math.PI * this.number * x / this.period * 2);
 	}
 	
 	Refresh(){
@@ -344,7 +344,7 @@ class Harmonic{
 		let textKoef = this.kb < 0 ? '': '+';
 		if (this.ka != 0) this.text = this.text + this.ka.toPrecision(3) + '·cos(' + this.number + '·π·x/' + (this.period / 2) + ')';
 		if (this.kb != 0) this.text = this.text + textKoef + this.kb.toPrecision(3) + '·sin(' + this.number + '·π·x/' + this.period / 2 + ')';
-		if (this.number == 0) this.text = this.ka.toPrecision(3);
+		if (this.number == 0) this.text = (this.ka / 2).toPrecision(3);
 	}
 	
 	toString(){
